@@ -87,9 +87,13 @@ export default function Appointments() {
   const [selectedTab, setSelectedTab] = useState("upcoming");
   const [appointments, setAppointments] = useState(initialAppointments);
   
+  // Fixed: initialize with current date formatted as YYYY-MM-DD
+  const today = new Date();
+  const formattedToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
   const [newAppointment, setNewAppointment] = useState({
     patientName: "",
-    date: "",
+    date: formattedToday,
     time: "",
     type: "Consultation",
     notes: "",
@@ -100,22 +104,22 @@ export default function Appointments() {
   
   const handleNewAppointment = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("New appointment:", newAppointment);
     
-    const newId = Math.max(...appointments.map(app => app.id)) + 1;
+    // Fixed: generate new ID properly
+    const newId = appointments.length > 0 ? Math.max(...appointments.map(app => app.id)) + 1 : 1;
     
-    setAppointments(prev => [
-      ...prev,
-      {
-        id: newId,
-        patientName: newAppointment.patientName,
-        date: newAppointment.date,
-        time: newAppointment.time,
-        status: "confirmed",
-        type: newAppointment.type,
-        notes: newAppointment.notes,
-      }
-    ]);
+    const appointmentToAdd = {
+      id: newId,
+      patientName: newAppointment.patientName,
+      date: newAppointment.date,
+      time: newAppointment.time,
+      status: "confirmed",
+      type: newAppointment.type,
+      notes: newAppointment.notes,
+    };
+    
+    // Fixed: properly update the appointments state
+    setAppointments(prevAppointments => [...prevAppointments, appointmentToAdd]);
     
     toast.success(t("appointments.success.scheduled"));
     setIsDialogOpen(false);
@@ -123,7 +127,7 @@ export default function Appointments() {
     // Reset form
     setNewAppointment({
       patientName: "",
-      date: "",
+      date: formattedToday,
       time: "",
       type: "Consultation",
       notes: "",
