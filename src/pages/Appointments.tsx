@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +28,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { formatDate, getDirectionAwareClassName } from "@/lib/utils";
+import { Calendar as CalendarIcon, Clock, FileText, Plus, Users } from "lucide-react";
 
 // Mock data
 const initialAppointments = [
@@ -80,6 +82,7 @@ const initialAppointments = [
 ];
 
 export default function Appointments() {
+  const { t, language } = useLanguage();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedTab, setSelectedTab] = useState("upcoming");
   const [appointments, setAppointments] = useState(initialAppointments);
@@ -114,7 +117,7 @@ export default function Appointments() {
       }
     ]);
     
-    toast.success("Appointment scheduled successfully!");
+    toast.success(t("appointments.success.scheduled"));
     setIsDialogOpen(false);
     
     // Reset form
@@ -140,14 +143,14 @@ export default function Appointments() {
     setAppointments(prev => 
       prev.map(app => app.id === id ? { ...app, status: "canceled" } : app)
     );
-    toast.success("Appointment canceled successfully!");
+    toast.success(t("appointments.success.canceled"));
   };
   
   const handleDelete = () => {
     if (appointmentToDelete !== null) {
       setAppointments(prev => prev.filter(app => app.id !== appointmentToDelete));
       setAppointmentToDelete(null);
-      toast.success("Appointment deleted successfully!");
+      toast.success(t("appointments.success.deleted"));
     }
   };
   
@@ -155,7 +158,7 @@ export default function Appointments() {
     setAppointments(prev => 
       prev.map(app => app.id === id ? { ...app, status: "confirmed" } : app)
     );
-    toast.success("Appointment restored successfully!");
+    toast.success(t("appointments.success.restored"));
   };
   
   // Filter appointments based on the selected date
@@ -194,42 +197,79 @@ export default function Appointments() {
     }
   };
 
+  // Quick Actions data
+  const quickActions = [
+    { 
+      title: t("quickActions.todaySchedule"), 
+      icon: <CalendarIcon className="h-4 w-4" /> 
+    },
+    { 
+      title: t("quickActions.reports"), 
+      icon: <FileText className="h-4 w-4" /> 
+    },
+    { 
+      title: t("quickActions.reminders"), 
+      icon: <Clock className="h-4 w-4" /> 
+    },
+    { 
+      title: t("quickActions.addPatient"), 
+      icon: <Users className="h-4 w-4" /> 
+    },
+    { 
+      title: t("quickActions.newPrescription"), 
+      icon: <FileText className="h-4 w-4" /> 
+    },
+  ];
+
+  // RTL aware classes for layout
+  const gridColsClass = getDirectionAwareClassName(
+    "grid-cols-1 lg:grid-cols-3", 
+    "grid-cols-1 lg:grid-cols-3"
+  );
+  
+  const colSpanClass = getDirectionAwareClassName(
+    "lg:col-span-2", 
+    "lg:col-span-2"
+  );
+
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-2xl font-bold">Appointments</h1>
+        <h1 className="text-2xl font-bold">{t("appointments.title")}</h1>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="mt-4 md:mt-0">
-              + New Appointment
+              <Plus className="h-4 w-4 mr-2" />
+              {t("appointments.new")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
-              <DialogTitle>Schedule New Appointment</DialogTitle>
+              <DialogTitle>{t("appointments.schedule")}</DialogTitle>
               <DialogDescription>
-                Enter the patient and appointment details below.
+                {t("appointments.enterDetails")}
               </DialogDescription>
             </DialogHeader>
             
             <form onSubmit={handleNewAppointment} className="space-y-4 pt-4">
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor="patientName">Patient Name</Label>
+                  <Label htmlFor="patientName">{t("appointments.patientName")}</Label>
                   <Input 
                     id="patientName" 
                     name="patientName"
                     value={newAppointment.patientName}
                     onChange={handleInputChange}
-                    placeholder="Enter patient name"
+                    placeholder={t("appointments.patientName")}
                     required
+                    className={language === "ar" ? "text-right" : ""}
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="date">{t("appointments.date")}</Label>
                     <Input 
                       id="date" 
                       name="date"
@@ -241,7 +281,7 @@ export default function Appointments() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="time">Time</Label>
+                    <Label htmlFor="time">{t("appointments.time")}</Label>
                     <Input 
                       id="time" 
                       name="time"
@@ -254,60 +294,61 @@ export default function Appointments() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="type">Appointment Type</Label>
+                  <Label htmlFor="type">{t("appointments.type")}</Label>
                   <Select 
                     value={newAppointment.type} 
                     onValueChange={(value) => handleSelectChange(value, "type")}
                   >
                     <SelectTrigger id="type">
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder={t("appointments.type")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Consultation">Consultation</SelectItem>
-                      <SelectItem value="Check-up">Check-up</SelectItem>
-                      <SelectItem value="Follow-up">Follow-up</SelectItem>
-                      <SelectItem value="Emergency">Emergency</SelectItem>
-                      <SelectItem value="Procedure">Procedure</SelectItem>
+                      <SelectItem value="Consultation">{t("appointments.type.consultation")}</SelectItem>
+                      <SelectItem value="Check-up">{t("appointments.type.checkup")}</SelectItem>
+                      <SelectItem value="Follow-up">{t("appointments.type.followup")}</SelectItem>
+                      <SelectItem value="Emergency">{t("appointments.type.emergency")}</SelectItem>
+                      <SelectItem value="Procedure">{t("appointments.type.procedure")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">{t("appointments.notes")}</Label>
                   <Input 
                     id="notes" 
                     name="notes"
                     value={newAppointment.notes}
                     onChange={handleInputChange}
-                    placeholder="Additional notes"
+                    placeholder={t("appointments.notes")}
+                    className={language === "ar" ? "text-right" : ""}
                   />
                 </div>
               </div>
               
               <DialogFooter>
-                <Button type="submit">Schedule Appointment</Button>
+                <Button type="submit">{t("appointments.schedule.button")}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <div className={`grid ${gridColsClass} gap-6`}>
+        <Card className={colSpanClass}>
           <CardHeader>
-            <CardTitle>Appointment List</CardTitle>
+            <CardTitle>{t("appointments.title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
               <TabsList className="w-full mb-6">
-                <TabsTrigger value="upcoming" className="flex-1">Upcoming</TabsTrigger>
-                <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                <TabsTrigger value="canceled" className="flex-1">Canceled</TabsTrigger>
+                <TabsTrigger value="upcoming" className="flex-1">{t("tabs.upcoming")}</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1">{t("tabs.all")}</TabsTrigger>
+                <TabsTrigger value="canceled" className="flex-1">{t("tabs.canceled")}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="upcoming" className="space-y-4">
                 {displayedAppointments.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">No appointments for the selected date</div>
+                  <div className="text-center py-8 text-gray-500">{t("appointments.noAppointments")}</div>
                 ) : (
                   displayedAppointments.map((appointment) => (
                     <div 
@@ -317,36 +358,38 @@ export default function Appointments() {
                       <div className="flex flex-col md:flex-row justify-between mb-2">
                         <div className="font-medium">{appointment.patientName}</div>
                         <div className="text-gray-500 text-sm">
-                          {new Date(appointment.date).toLocaleDateString()} • {appointment.time}
+                          {formatDate(appointment.date)} • {appointment.time}
                         </div>
                       </div>
                       
                       <div className="flex flex-col md:flex-row justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
-                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                            {t(`appointments.status.${appointment.status}`)}
                           </span>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">{appointment.type}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {t(`appointments.type.${appointment.type.toLowerCase().replace(/-/g, "")}`)}
+                          </span>
                         </div>
                         
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Reschedule</Button>
+                          <Button variant="outline" size="sm">{t("appointments.reschedule")}</Button>
                           
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">Cancel</Button>
+                              <Button variant="destructive" size="sm">{t("appointments.cancel")}</Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+                                <AlertDialogTitle>{t("appointments.confirmCancel")}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to cancel this appointment? This action can be reversed later.
+                                  {t("appointments.confirmCancelMessage")}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                                <AlertDialogCancel>{t("appointments.keep")}</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => handleCancel(appointment.id)}>
-                                  Yes, cancel appointment
+                                  {t("appointments.confirmCancelButton")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -355,23 +398,23 @@ export default function Appointments() {
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm" className="!text-red-600 border-red-200">
-                                Delete
+                                {t("appointments.delete")}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
+                                <AlertDialogTitle>{t("appointments.confirmDelete")}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to delete this appointment? This action cannot be undone.
+                                  {t("appointments.confirmDeleteMessage")}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>{t("appointments.cancelConfirm")}</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => {
                                   setAppointmentToDelete(appointment.id);
                                   handleDelete();
                                 }}>
-                                  Delete
+                                  {t("appointments.confirmDeleteButton")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -381,7 +424,7 @@ export default function Appointments() {
                       
                       {appointment.notes && (
                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-medium">Notes:</span> {appointment.notes}
+                          <span className="font-medium">{t("appointments.notes")}:</span> {appointment.notes}
                         </div>
                       )}
                     </div>
@@ -559,7 +602,7 @@ export default function Appointments() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Calendar</CardTitle>
+              <CardTitle>{t("calendar.title")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Calendar
@@ -573,18 +616,15 @@ export default function Appointments() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle>{t("quickActions.title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
-                Today's Schedule
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Appointment Reports
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Send Reminders
-              </Button>
+              {quickActions.map((action, index) => (
+                <Button key={index} variant="outline" className="w-full justify-start">
+                  {action.icon}
+                  <span className="ml-2">{action.title}</span>
+                </Button>
+              ))}
             </CardContent>
           </Card>
         </div>

@@ -12,34 +12,36 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Calendar, FileText, Home, LayoutDashboard, User, Users } from "lucide-react";
+import { Calendar, FileText, Home, LayoutDashboard, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const mainMenuItems = [
-  {
-    title: "Dashboard",
-    path: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Appointments",
-    path: "/appointments",
-    icon: Calendar,
-  },
-  {
-    title: "Patients",
-    path: "/patients",
-    icon: Users,
-  },
-  {
-    title: "Prescriptions",
-    path: "/prescriptions",
-    icon: FileText,
-  },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function AppSidebar() {
   const location = useLocation();
+  const { t } = useLanguage();
+
+  const mainMenuItems = [
+    {
+      title: t("nav.dashboard"),
+      path: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      title: t("nav.appointments"),
+      path: "/appointments",
+      icon: Calendar,
+    },
+    {
+      title: t("nav.patients"),
+      path: "/patients",
+      icon: Users,
+    },
+    {
+      title: t("nav.prescriptions"),
+      path: "/prescriptions",
+      icon: FileText,
+    },
+  ];
 
   return (
     <Sidebar>
@@ -48,13 +50,13 @@ export function AppSidebar() {
           <div className="w-8 h-8 bg-tbib-600 rounded-md flex items-center justify-center">
             <span className="text-white font-bold text-lg">T</span>
           </div>
-          <span className="font-bold text-xl text-tbib-600">Tbib360</span>
+          <span className="font-bold text-xl text-tbib-600">{t("app.title")}</span>
         </div>
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.dashboard")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainMenuItems.map((item) => (
@@ -78,14 +80,14 @@ export function AppSidebar() {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Insurance</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.insurance")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={location.pathname === "/cnss"}>
                   <Link to="/cnss" className="flex items-center gap-3">
                     <span className="w-5 h-5 bg-tbib-600 text-white rounded-sm flex items-center justify-center text-xs font-bold">C</span>
-                    <span>CNSS</span>
+                    <span>{t("nav.cnss")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -93,7 +95,7 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild isActive={location.pathname === "/ramed"}>
                   <Link to="/ramed" className="flex items-center gap-3">
                     <span className="w-5 h-5 bg-green-600 text-white rounded-sm flex items-center justify-center text-xs font-bold">R</span>
-                    <span>RAMED</span>
+                    <span>{t("nav.ramed")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -105,7 +107,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t p-4">
         <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <Home className="h-4 w-4" />
-          <span>Back to Home</span>
+          <span>{t("nav.backToHome")}</span>
         </Link>
       </SidebarFooter>
     </Sidebar>
