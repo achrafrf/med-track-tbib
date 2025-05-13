@@ -1,8 +1,5 @@
 
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { User, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,37 +8,110 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bell, Menu, Search } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function AppHeader() {
   return (
-    <header className="border-b bg-white h-16 flex items-center px-4 sticky top-0 z-10">
-      <div className="flex items-center gap-2 md:hidden">
-        <SidebarTrigger />
-      </div>
-      
-      <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
-        </Button>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <User className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/">Logout</Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-16 items-center justify-between px-4">
+        <div className="lg:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="lg:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[240px] sm:w-[300px]">
+              <SheetHeader>
+                <SheetTitle className="text-left">Tbib360</SheetTitle>
+                <SheetDescription className="text-left">
+                  Medical Practice Management System
+                </SheetDescription>
+              </SheetHeader>
+              <nav className="flex flex-col gap-2 pt-4">
+                <Button variant="ghost" className="justify-start">
+                  Dashboard
+                </Button>
+                <Button variant="ghost" className="justify-start">
+                  Patients
+                </Button>
+                <Button variant="ghost" className="justify-start">
+                  Appointments
+                </Button>
+                <Button variant="ghost" className="justify-start">
+                  Prescriptions
+                </Button>
+                <Button variant="ghost" className="justify-start">
+                  CNSS
+                </Button>
+                <Button variant="ghost" className="justify-start">
+                  RAMED
+                </Button>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+        <div className="flex-1 lg:grow-0">
+          <form className="hidden lg:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="pl-10 w-[200px] md:w-[300px]"
+              />
+            </div>
+          </form>
+        </div>
+        <div className="flex items-center space-x-2">
+          <ThemeToggle />
+          <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Notifications</span>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full"
+              >
+                <Avatar>
+                  <AvatarImage src="/placeholder.svg" alt="user" />
+                  <AvatarFallback>SB</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">Dr. Said</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    said@tbib360.com
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );

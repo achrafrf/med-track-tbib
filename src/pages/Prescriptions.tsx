@@ -20,15 +20,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, FileText, CalendarCheck, Download } from "lucide-react";
+import { Search, FileText, CalendarCheck, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 // Mock prescriptions data
-const prescriptions = [
+const initialPrescriptions = [
   {
     id: 1,
     patientName: "Ahmed Alami",
@@ -114,6 +125,8 @@ export default function Prescriptions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [prescriptions, setPrescriptions] = useState(initialPrescriptions);
+  const [prescriptionToDelete, setPrescriptionToDelete] = useState<number | null>(null);
   
   const [newPrescription, setNewPrescription] = useState({
     patientId: "",
@@ -178,6 +191,14 @@ export default function Prescriptions() {
       ...prev,
       medications: prev.medications.filter((_, i) => i !== index)
     }));
+  };
+  
+  const handleDelete = () => {
+    if (prescriptionToDelete !== null) {
+      setPrescriptions(prev => prev.filter(p => p.id !== prescriptionToDelete));
+      setPrescriptionToDelete(null);
+      toast.success("Prescription deleted successfully!");
+    }
   };
   
   const getStatusBadge = (status: string) => {
@@ -372,7 +393,7 @@ export default function Prescriptions() {
             <div className="space-y-4">
               {displayedPrescriptions.map(prescription => (
                 <Card key={prescription.id} className="overflow-hidden">
-                  <CardHeader className="bg-gray-50 pb-2">
+                  <CardHeader className="bg-gray-50 dark:bg-gray-800 pb-2">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                       <div>
                         <CardTitle className="text-lg">{prescription.patientName}</CardTitle>
@@ -398,7 +419,7 @@ export default function Prescriptions() {
                           {prescription.medications.map((medication, index) => (
                             <div key={index} className="border-l-2 border-tbib-300 pl-4">
                               <div className="font-medium">{medication.name} - {medication.dosage}</div>
-                              <div className="text-sm text-gray-600">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
                                 {medication.frequency}, for {medication.duration}
                               </div>
                             </div>
@@ -409,12 +430,12 @@ export default function Prescriptions() {
                       {prescription.instructions && (
                         <div>
                           <h4 className="text-sm font-medium mb-2">Instructions:</h4>
-                          <p className="text-sm text-gray-600">{prescription.instructions}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{prescription.instructions}</p>
                         </div>
                       )}
                       
                       {prescription.status === "active" && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <CalendarCheck className="h-4 w-4" />
                           <span>Renewal date: {new Date(prescription.renewalDate).toLocaleDateString()}</span>
                         </div>
@@ -422,9 +443,42 @@ export default function Prescriptions() {
                     </div>
                   </CardContent>
                   
-                  <CardFooter className="bg-gray-50 py-2 px-4 flex justify-end gap-2">
+                  <CardFooter className="bg-gray-50 dark:bg-gray-800 py-2 px-4 flex justify-end gap-2">
                     <Button variant="outline" size="sm">Edit</Button>
                     <Button variant="outline" size="sm">View History</Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Prescription</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this prescription? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => {
+                              setPrescriptionToDelete(prescription.id);
+                              handleDelete();
+                            }}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    
                     {prescription.status === "active" && (
                       <Button size="sm">Renew Prescription</Button>
                     )}

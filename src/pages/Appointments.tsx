@@ -16,11 +16,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { toast } from "sonner";
 
 // Mock data
-const appointments = [
+const initialAppointments = [
   {
     id: 1,
     patientName: "Ahmed Alami",
@@ -71,6 +82,7 @@ const appointments = [
 export default function Appointments() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedTab, setSelectedTab] = useState("upcoming");
+  const [appointments, setAppointments] = useState(initialAppointments);
   
   const [newAppointment, setNewAppointment] = useState({
     patientName: "",
@@ -81,10 +93,27 @@ export default function Appointments() {
   });
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<number | null>(null);
   
   const handleNewAppointment = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("New appointment:", newAppointment);
+    
+    const newId = Math.max(...appointments.map(app => app.id)) + 1;
+    
+    setAppointments(prev => [
+      ...prev,
+      {
+        id: newId,
+        patientName: newAppointment.patientName,
+        date: newAppointment.date,
+        time: newAppointment.time,
+        status: "confirmed",
+        type: newAppointment.type,
+        notes: newAppointment.notes,
+      }
+    ]);
+    
     toast.success("Appointment scheduled successfully!");
     setIsDialogOpen(false);
     
@@ -105,6 +134,28 @@ export default function Appointments() {
   
   const handleSelectChange = (value: string, name: string) => {
     setNewAppointment(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleCancel = (id: number) => {
+    setAppointments(prev => 
+      prev.map(app => app.id === id ? { ...app, status: "canceled" } : app)
+    );
+    toast.success("Appointment canceled successfully!");
+  };
+  
+  const handleDelete = () => {
+    if (appointmentToDelete !== null) {
+      setAppointments(prev => prev.filter(app => app.id !== appointmentToDelete));
+      setAppointmentToDelete(null);
+      toast.success("Appointment deleted successfully!");
+    }
+  };
+  
+  const handleRestore = (id: number) => {
+    setAppointments(prev => 
+      prev.map(app => app.id === id ? { ...app, status: "confirmed" } : app)
+    );
+    toast.success("Appointment restored successfully!");
   };
   
   // Filter appointments based on the selected date
@@ -261,7 +312,7 @@ export default function Appointments() {
                   displayedAppointments.map((appointment) => (
                     <div 
                       key={appointment.id}
-                      className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                      className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       <div className="flex flex-col md:flex-row justify-between mb-2">
                         <div className="font-medium">{appointment.patientName}</div>
@@ -275,17 +326,61 @@ export default function Appointments() {
                           <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
                             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                           </span>
-                          <span className="text-sm text-gray-600">{appointment.type}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{appointment.type}</span>
                         </div>
                         
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm">Reschedule</Button>
-                          <Button variant="destructive" size="sm">Cancel</Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm">Cancel</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to cancel this appointment? This action can be reversed later.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleCancel(appointment.id)}>
+                                  Yes, cancel appointment
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="!text-red-600 border-red-200">
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this appointment? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => {
+                                  setAppointmentToDelete(appointment.id);
+                                  handleDelete();
+                                }}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                       
                       {appointment.notes && (
-                        <div className="mt-2 text-sm text-gray-600">
+                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                           <span className="font-medium">Notes:</span> {appointment.notes}
                         </div>
                       )}
@@ -295,7 +390,6 @@ export default function Appointments() {
               </TabsContent>
               
               <TabsContent value="all">
-                {/* Similar content as "upcoming" tab but without filtering by status */}
                 <div className="space-y-4">
                   {filteredAppointments.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">No appointments for the selected date</div>
@@ -303,9 +397,8 @@ export default function Appointments() {
                     filteredAppointments.map((appointment) => (
                       <div 
                         key={appointment.id}
-                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                        className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
-                        {/* Same appointment card content */}
                         <div className="flex flex-col md:flex-row justify-between mb-2">
                           <div className="font-medium">{appointment.patientName}</div>
                           <div className="text-gray-500 text-sm">
@@ -318,17 +411,67 @@ export default function Appointments() {
                             <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
                               {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                             </span>
-                            <span className="text-sm text-gray-600">{appointment.type}</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{appointment.type}</span>
                           </div>
                           
                           <div className="flex gap-2">
                             <Button variant="outline" size="sm">Reschedule</Button>
-                            <Button variant="destructive" size="sm">Cancel</Button>
+                            
+                            {appointment.status !== "canceled" ? (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" size="sm">Cancel</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to cancel this appointment? This action can be reversed later.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleCancel(appointment.id)}>
+                                      Yes, cancel appointment
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            ) : (
+                              <Button variant="secondary" size="sm" onClick={() => handleRestore(appointment.id)}>
+                                Restore
+                              </Button>
+                            )}
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="!text-red-600 border-red-200">
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this appointment? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => {
+                                    setAppointmentToDelete(appointment.id);
+                                    handleDelete();
+                                  }}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                         
                         {appointment.notes && (
-                          <div className="mt-2 text-sm text-gray-600">
+                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                             <span className="font-medium">Notes:</span> {appointment.notes}
                           </div>
                         )}
@@ -339,7 +482,6 @@ export default function Appointments() {
               </TabsContent>
               
               <TabsContent value="canceled">
-                {/* Only show canceled appointments */}
                 <div className="space-y-4">
                   {displayedAppointments.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">No canceled appointments for the selected date</div>
@@ -347,9 +489,8 @@ export default function Appointments() {
                     displayedAppointments.map((appointment) => (
                       <div 
                         key={appointment.id}
-                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                        className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
-                        {/* Same appointment card content */}
                         <div className="flex flex-col md:flex-row justify-between mb-2">
                           <div className="font-medium">{appointment.patientName}</div>
                           <div className="text-gray-500 text-sm">
@@ -362,16 +503,47 @@ export default function Appointments() {
                             <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
                               {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                             </span>
-                            <span className="text-sm text-gray-600">{appointment.type}</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{appointment.type}</span>
                           </div>
                           
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Restore</Button>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              onClick={() => handleRestore(appointment.id)}
+                            >
+                              Restore
+                            </Button>
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="!text-red-600 border-red-200">
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this appointment? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => {
+                                    setAppointmentToDelete(appointment.id);
+                                    handleDelete();
+                                  }}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                         
                         {appointment.notes && (
-                          <div className="mt-2 text-sm text-gray-600">
+                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                             <span className="font-medium">Notes:</span> {appointment.notes}
                           </div>
                         )}
