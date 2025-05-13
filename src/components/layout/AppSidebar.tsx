@@ -59,7 +59,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild active={location.pathname === item.path}>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.path}>
                     <Link 
                       to={item.path} 
                       className={cn(
@@ -82,7 +82,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild active={location.pathname === "/cnss"}>
+                <SidebarMenuButton asChild isActive={location.pathname === "/cnss"}>
                   <Link to="/cnss" className="flex items-center gap-3">
                     <span className="w-5 h-5 bg-tbib-600 text-white rounded-sm flex items-center justify-center text-xs font-bold">C</span>
                     <span>CNSS</span>
@@ -90,7 +90,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild active={location.pathname === "/ramed"}>
+                <SidebarMenuButton asChild isActive={location.pathname === "/ramed"}>
                   <Link to="/ramed" className="flex items-center gap-3">
                     <span className="w-5 h-5 bg-green-600 text-white rounded-sm flex items-center justify-center text-xs font-bold">R</span>
                     <span>RAMED</span>

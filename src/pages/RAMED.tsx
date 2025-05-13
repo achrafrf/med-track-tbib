@@ -64,7 +64,7 @@ export default function RAMED() {
       case "valid":
         return <Badge variant="default" className="bg-green-500">Valid</Badge>;
       case "expiring":
-        return <Badge variant="warning" className="bg-yellow-500">Expiring Soon</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-500">Expiring Soon</Badge>;
       case "expired":
         return <Badge variant="destructive">Expired</Badge>;
       default:
