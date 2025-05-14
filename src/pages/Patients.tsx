@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,120 +21,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, FileText, Calendar, User, Phone } from "lucide-react";
-import { useState } from "react";
-
-// Mock patient data
-const patients = [
-  {
-    id: 1,
-    name: "Ahmed Alami",
-    age: 45,
-    gender: "Male",
-    phone: "+212 6XX-XXXXX1",
-    email: "ahmed.alami@example.com",
-    lastVisit: "2025-05-10",
-    insurance: "CNSS",
-    insuranceId: "CNSS-123456789",
-    medicalHistory: ["Hypertension", "Diabetes Type 2"],
-    avatar: "https://i.pravatar.cc/150?img=30",
-  },
-  {
-    id: 2,
-    name: "Fatima Benali",
-    age: 32,
-    gender: "Female",
-    phone: "+212 6XX-XXXXX2",
-    email: "fatima.benali@example.com",
-    lastVisit: "2025-05-05",
-    insurance: "RAMED",
-    insuranceId: "RAMED-987654321",
-    medicalHistory: ["Asthma"],
-    avatar: "https://i.pravatar.cc/150?img=31",
-  },
-  {
-    id: 3,
-    name: "Karim Tazi",
-    age: 28,
-    gender: "Male",
-    phone: "+212 6XX-XXXXX3",
-    email: "karim.tazi@example.com",
-    lastVisit: "2025-04-20",
-    insurance: "CNSS",
-    insuranceId: "CNSS-456789123",
-    medicalHistory: ["Allergies"],
-    avatar: "https://i.pravatar.cc/150?img=33",
-  },
-  {
-    id: 4,
-    name: "Leila Chraibi",
-    age: 52,
-    gender: "Female",
-    phone: "+212 6XX-XXXXX4",
-    email: "leila.chraibi@example.com",
-    lastVisit: "2025-05-08",
-    insurance: "Private",
-    insuranceId: "PRV-789123456",
-    medicalHistory: ["Arthritis"],
-    avatar: "https://i.pravatar.cc/150?img=14",
-  },
-  {
-    id: 5,
-    name: "Omar Ziani",
-    age: 64,
-    gender: "Male",
-    phone: "+212 6XX-XXXXX5",
-    email: "omar.ziani@example.com",
-    lastVisit: "2025-04-15",
-    insurance: "RAMED",
-    insuranceId: "RAMED-321654987",
-    medicalHistory: ["Coronary Artery Disease", "Hypertension"],
-    avatar: "https://i.pravatar.cc/150?img=35",
-  },
-  {
-    id: 6,
-    name: "Salma Idrissi",
-    age: 29,
-    gender: "Female",
-    phone: "+212 6XX-XXXXX6",
-    email: "salma.idrissi@example.com",
-    lastVisit: "2025-05-01",
-    insurance: "CNSS",
-    insuranceId: "CNSS-654321987",
-    medicalHistory: [],
-    avatar: "https://i.pravatar.cc/150?img=23",
-  },
-];
+import { Search, MoreHorizontal, FileText, Calendar, User, Phone, UserPlus } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { usePatients } from "@/hooks/usePatients";
+import PatientForm from "@/components/patients/PatientForm";
 
 export default function Patients() {
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  // Filter patients based on search term
-  const filteredPatients = patients.filter(patient => 
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.insurance.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const getInsuranceTagColor = (insurance: string) => {
-    switch (insurance) {
-      case "CNSS":
-        return "bg-blue-100 text-blue-800";
-      case "RAMED":
-        return "bg-green-100 text-green-800";
-      case "Private":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  const { t } = useLanguage();
+  const {
+    filteredPatients,
+    searchTerm, 
+    setSearchTerm,
+    isDialogOpen,
+    setIsDialogOpen,
+    addPatient,
+    deletePatient,
+    getInsuranceTagColor
+  } = usePatients();
   
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-2xl font-bold">Patients</h1>
+        <h1 className="text-2xl font-bold">{t("patients.title") || "Patients"}</h1>
         
-        <Button className="mt-4 md:mt-0">+ Add New Patient</Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="mt-4 md:mt-0">
+              <UserPlus className="h-4 w-4 mr-2" />
+              {t("patients.addNew") || "+ Add New Patient"}
+            </Button>
+          </DialogTrigger>
+          <PatientForm 
+            setIsDialogOpen={setIsDialogOpen}
+            onAddPatient={addPatient}
+          />
+        </Dialog>
       </div>
       
       <Card className="mb-6">
@@ -142,7 +64,7 @@ export default function Patients() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input 
-                placeholder="Search patients..." 
+                placeholder={t("patients.search") || "Search patients..."} 
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -150,8 +72,8 @@ export default function Patients() {
             </div>
             
             <div className="flex gap-2 items-center">
-              <Button variant="outline">Filter</Button>
-              <Button variant="outline">Export</Button>
+              <Button variant="outline">{t("common.filter") || "Filter"}</Button>
+              <Button variant="outline">{t("common.export") || "Export"}</Button>
             </div>
           </div>
         </CardContent>
@@ -159,17 +81,17 @@ export default function Patients() {
       
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="w-full mb-6">
-          <TabsTrigger value="all" className="flex-1">All Patients</TabsTrigger>
+          <TabsTrigger value="all" className="flex-1">{t("tabs.allPatients") || "All Patients"}</TabsTrigger>
           <TabsTrigger value="cnss" className="flex-1">CNSS</TabsTrigger>
           <TabsTrigger value="ramed" className="flex-1">RAMED</TabsTrigger>
-          <TabsTrigger value="private" className="flex-1">Private Insurance</TabsTrigger>
+          <TabsTrigger value="private" className="flex-1">{t("patients.private") || "Private Insurance"}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPatients.length === 0 ? (
               <div className="col-span-full text-center py-12 text-gray-500">
-                No patients found matching your search.
+                {t("patients.noResults") || "No patients found matching your search."}
               </div>
             ) : (
               filteredPatients.map((patient) => (
@@ -183,7 +105,7 @@ export default function Patients() {
                       <div>
                         <CardTitle className="text-lg">{patient.name}</CardTitle>
                         <CardDescription>
-                          {patient.age} yrs • {patient.gender}
+                          {patient.age} {t("patients.age") || "yrs"} • {patient.gender}
                         </CardDescription>
                       </div>
                     </div>
@@ -195,14 +117,19 @@ export default function Patients() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t("common.actions") || "Actions"}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit Patient</DropdownMenuItem>
-                        <DropdownMenuItem>Schedule Appointment</DropdownMenuItem>
-                        <DropdownMenuItem>Medical History</DropdownMenuItem>
+                        <DropdownMenuItem>{t("patients.actions.viewDetails") || "View Details"}</DropdownMenuItem>
+                        <DropdownMenuItem>{t("patients.actions.edit") || "Edit Patient"}</DropdownMenuItem>
+                        <DropdownMenuItem>{t("patients.actions.schedule") || "Schedule Appointment"}</DropdownMenuItem>
+                        <DropdownMenuItem>{t("patients.actions.history") || "Medical History"}</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">Delete Patient</DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-red-600"
+                          onClick={() => deletePatient(patient.id)}
+                        >
+                          {t("patients.actions.delete") || "Delete Patient"}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </CardHeader>
@@ -218,7 +145,9 @@ export default function Patients() {
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">Last visit: {new Date(patient.lastVisit).toLocaleDateString()}</span>
+                      <span className="text-sm">
+                        {t("patients.lastVisit") || "Last visit"}: {new Date(patient.lastVisit).toLocaleDateString()}
+                      </span>
                     </div>
                     
                     <div className="mt-3 flex items-center gap-2">
@@ -230,7 +159,7 @@ export default function Patients() {
                     
                     {patient.medicalHistory.length > 0 && (
                       <div className="mt-3">
-                        <h4 className="text-sm font-medium mb-1">Medical History:</h4>
+                        <h4 className="text-sm font-medium mb-1">{t("patients.medicalHistory") || "Medical History"}:</h4>
                         <div className="flex flex-wrap gap-1">
                           {patient.medicalHistory.map((condition, index) => (
                             <span 
@@ -248,11 +177,11 @@ export default function Patients() {
                   <CardFooter className="flex justify-between pt-0">
                     <Button variant="outline" size="sm" className="w-full">
                       <FileText className="h-4 w-4 mr-2" />
-                      Patient Records
+                      {t("patients.records") || "Patient Records"}
                     </Button>
                     <Button size="sm" className="w-full ml-2">
                       <Calendar className="h-4 w-4 mr-2" />
-                      Book Appointment
+                      {t("patients.bookAppointment") || "Book Appointment"}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -266,7 +195,7 @@ export default function Patients() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPatients.filter(p => p.insurance === "CNSS").length === 0 ? (
               <div className="col-span-full text-center py-12 text-gray-500">
-                No CNSS patients found matching your search.
+                {t("patients.noCNSS") || "No CNSS patients found matching your search."}
               </div>
             ) : (
               filteredPatients.filter(p => p.insurance === "CNSS").map((patient) => (
@@ -284,7 +213,7 @@ export default function Patients() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPatients.filter(p => p.insurance === "RAMED").length === 0 ? (
               <div className="col-span-full text-center py-12 text-gray-500">
-                No RAMED patients found matching your search.
+                {t("patients.noRAMED") || "No RAMED patients found matching your search."}
               </div>
             ) : (
               filteredPatients.filter(p => p.insurance === "RAMED").map((patient) => (
@@ -302,7 +231,7 @@ export default function Patients() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPatients.filter(p => p.insurance === "Private").length === 0 ? (
               <div className="col-span-full text-center py-12 text-gray-500">
-                No Private insurance patients found matching your search.
+                {t("patients.noPrivate") || "No Private insurance patients found matching your search."}
               </div>
             ) : (
               filteredPatients.filter(p => p.insurance === "Private").map((patient) => (
