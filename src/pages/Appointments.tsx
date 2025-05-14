@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,11 +27,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDate, getDirectionAwareClassName } from "@/lib/utils";
 import { Calendar as CalendarIcon, Clock, FileText, Plus, Users } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Mock data
 const initialAppointments = [
@@ -105,7 +107,6 @@ export default function Appointments() {
   const handleNewAppointment = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Fixed: generate new ID properly
     const newId = appointments.length > 0 ? Math.max(...appointments.map(app => app.id)) + 1 : 1;
     
     const appointmentToAdd = {
@@ -118,7 +119,7 @@ export default function Appointments() {
       notes: newAppointment.notes,
     };
     
-    // Fixed: properly update the appointments state
+    // Fix: Create a new array with the added appointment
     setAppointments(prevAppointments => [...prevAppointments, appointmentToAdd]);
     
     toast.success(t("appointments.success.scheduled"));
@@ -164,6 +165,10 @@ export default function Appointments() {
     );
     toast.success(t("appointments.success.restored"));
   };
+
+  const handleQuickAction = (action: string) => {
+    toast.info(`${action} action initiated`);
+  };
   
   // Filter appointments based on the selected date
   const filteredAppointments = appointments.filter(app => {
@@ -201,27 +206,51 @@ export default function Appointments() {
     }
   };
 
+  // Create an object to group appointments by date for the calendar
+  const appointmentsByDate = useMemo(() => {
+    const grouped: Record<string, {count: number, hasConfirmed: boolean}> = {};
+    appointments.forEach(app => {
+      const appDate = app.date;
+      if (!grouped[appDate]) {
+        grouped[appDate] = { count: 0, hasConfirmed: false };
+      }
+      grouped[appDate].count += 1;
+      if (app.status === "confirmed") {
+        grouped[appDate].hasConfirmed = true;
+      }
+    });
+    return grouped;
+  }, [appointments]);
+
   // Quick Actions data
   const quickActions = [
     { 
       title: t("quickActions.todaySchedule"), 
-      icon: <CalendarIcon className="h-4 w-4" /> 
+      icon: <CalendarIcon className="h-4 w-4" />,
+      action: () => {
+        setDate(new Date());
+        toast.success(t("quickActions.viewingTodaysSchedule"));
+      }
     },
     { 
       title: t("quickActions.reports"), 
-      icon: <FileText className="h-4 w-4" /> 
+      icon: <FileText className="h-4 w-4" />,
+      action: () => handleQuickAction(t("quickActions.reports"))
     },
     { 
       title: t("quickActions.reminders"), 
-      icon: <Clock className="h-4 w-4" /> 
+      icon: <Clock className="h-4 w-4" />,
+      action: () => handleQuickAction(t("quickActions.reminders"))
     },
     { 
       title: t("quickActions.addPatient"), 
-      icon: <Users className="h-4 w-4" /> 
+      icon: <Users className="h-4 w-4" />,
+      action: () => handleQuickAction(t("quickActions.addPatient"))
     },
     { 
       title: t("quickActions.newPrescription"), 
-      icon: <FileText className="h-4 w-4" /> 
+      icon: <FileText className="h-4 w-4" />,
+      action: () => handleQuickAction(t("quickActions.newPrescription"))
     },
   ];
 
@@ -235,6 +264,25 @@ export default function Appointments() {
     "lg:col-span-2", 
     "lg:col-span-2"
   );
+
+  // Custom day renderer for the calendar to show appointment indicators
+  const renderDay = (day: Date) => {
+    const dateString = day.toISOString().split('T')[0];
+    const appointmentsForDay = appointmentsByDate[dateString];
+    
+    if (!appointmentsForDay) return undefined;
+    
+    return (
+      <div className="relative w-full h-full flex justify-center items-center">
+        <div className="absolute bottom-0 left-0 right-0 flex justify-center mb-1">
+          <div className={`w-1.5 h-1.5 rounded-full mx-0.5 ${appointmentsForDay.hasConfirmed ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+          {appointmentsForDay.count > 1 && (
+            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-blue-500"></div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <DashboardLayout>
@@ -613,8 +661,28 @@ export default function Appointments() {
                 mode="single"
                 selected={date}
                 onSelect={setDate}
-                className="rounded-md border"
+                className="rounded-md border pointer-events-auto"
+                components={{
+                  Day: ({ date: day, ...props }) => {
+                    if (!day) return null;
+                    return (
+                      <div className="relative">
+                        <div {...props} />
+                        {renderDay(day)}
+                      </div>
+                    )
+                  }
+                }}
               />
+              
+              {date && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-2">{t("calendar.selectedDate")}: {date.toLocaleDateString()}</h3>
+                  <div className="text-xs text-gray-500">
+                    {filteredAppointments.length} {filteredAppointments.length === 1 ? t("calendar.appointment") : t("calendar.appointments")}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -624,7 +692,12 @@ export default function Appointments() {
             </CardHeader>
             <CardContent className="space-y-2">
               {quickActions.map((action, index) => (
-                <Button key={index} variant="outline" className="w-full justify-start">
+                <Button 
+                  key={index} 
+                  variant="outline" 
+                  className="w-full justify-start hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  onClick={action.action}
+                >
                   {action.icon}
                   <span className="ml-2">{action.title}</span>
                 </Button>
