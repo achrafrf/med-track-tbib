@@ -14,7 +14,6 @@ import { useAppointments } from "@/hooks/useAppointments";
 import AppointmentForm from "@/components/appointments/AppointmentForm";
 import AppointmentList from "@/components/appointments/AppointmentList";
 import AppointmentCalendar from "@/components/appointments/AppointmentCalendar";
-import WeeklyCalendarView from "@/components/appointments/WeeklyCalendarView";
 import QuickActions from "@/components/appointments/QuickActions";
 
 export default function Appointments() {
@@ -168,19 +167,6 @@ export default function Appointments() {
           </Card>
         </div>
       </div>
-      
-      {/* Weekly calendar view */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>{t("calendar.weeklyView")}</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <WeeklyCalendarView 
-            date={date}
-            appointmentsByDate={appointmentsByDate}
-          />
-        </CardContent>
-      </Card>
     </DashboardLayout>
   );
 }

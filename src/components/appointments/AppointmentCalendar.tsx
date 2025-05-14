@@ -45,16 +45,16 @@ const AppointmentCalendar = ({
     
     return (
       <div className="relative w-full h-full flex flex-col justify-center items-center">
-        {/* Display appointment indicators */}
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center mb-1">
+        {/* Display appointment dot indicators in the middle of day cells */}
+        <div className="absolute top-1/2 left-0 right-0 flex justify-center -mt-2">
           {appointmentsForDay.some(app => app.status === "confirmed") && (
-            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-green-500"></div>
+            <div className="w-2 h-2 rounded-full mx-0.5 bg-green-500"></div>
           )}
           {appointmentsForDay.some(app => app.status === "pending") && (
-            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-yellow-500"></div>
+            <div className="w-2 h-2 rounded-full mx-0.5 bg-yellow-500"></div>
           )}
           {appointmentsForDay.some(app => app.status === "canceled") && (
-            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-red-500"></div>
+            <div className="w-2 h-2 rounded-full mx-0.5 bg-red-500"></div>
           )}
         </div>
       </div>
