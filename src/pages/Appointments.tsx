@@ -1,241 +1,39 @@
+
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { formatDate, getDirectionAwareClassName } from "@/lib/utils";
+import { getDirectionAwareClassName } from "@/lib/utils";
 import { Calendar as CalendarIcon, Clock, FileText, Plus, Users } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useAppointments } from "@/hooks/useAppointments";
 
-// Mock data
-const initialAppointments = [
-  {
-    id: 1,
-    patientName: "Ahmed Alami",
-    date: "2025-05-13",
-    time: "09:00",
-    status: "confirmed",
-    type: "Check-up",
-    notes: "Regular check-up, patient has hypertension",
-  },
-  {
-    id: 2,
-    patientName: "Fatima Benali",
-    date: "2025-05-13",
-    time: "10:30",
-    status: "confirmed",
-    type: "Follow-up",
-    notes: "Follow-up after medication change",
-  },
-  {
-    id: 3,
-    patientName: "Karim Tazi",
-    date: "2025-05-13",
-    time: "14:00",
-    status: "canceled",
-    type: "Consultation",
-    notes: "New patient consultation",
-  },
-  {
-    id: 4,
-    patientName: "Leila Chraibi",
-    date: "2025-05-14",
-    time: "11:00",
-    status: "confirmed",
-    type: "Check-up",
-    notes: "Annual physical examination",
-  },
-  {
-    id: 5,
-    patientName: "Omar Ziani",
-    date: "2025-05-14",
-    time: "15:30",
-    status: "pending",
-    type: "Follow-up",
-    notes: "Follow-up for chronic condition",
-  },
-];
+// Import refactored components
+import AppointmentForm from "@/components/appointments/AppointmentForm";
+import AppointmentList from "@/components/appointments/AppointmentList";
+import AppointmentCalendar from "@/components/appointments/AppointmentCalendar";
+import WeeklyCalendarView from "@/components/appointments/WeeklyCalendarView";
+import QuickActions from "@/components/appointments/QuickActions";
 
 export default function Appointments() {
-  const { t, language } = useLanguage();
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [selectedTab, setSelectedTab] = useState("upcoming");
-  const [appointments, setAppointments] = useState(initialAppointments);
-  
-  // Fixed: initialize with current date formatted as YYYY-MM-DD
-  const today = new Date();
-  const formattedToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  
-  const [newAppointment, setNewAppointment] = useState({
-    patientName: "",
-    date: formattedToday,
-    time: "",
-    type: "Consultation",
-    notes: "",
-  });
-  
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [appointmentToDelete, setAppointmentToDelete] = useState<number | null>(null);
-  
-  const handleNewAppointment = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newId = appointments.length > 0 ? Math.max(...appointments.map(app => app.id)) + 1 : 1;
-    
-    const appointmentToAdd = {
-      id: newId,
-      patientName: newAppointment.patientName,
-      date: newAppointment.date,
-      time: newAppointment.time,
-      status: "confirmed",
-      type: newAppointment.type,
-      notes: newAppointment.notes,
-    };
-    
-    // Fix: Create a new array with the added appointment
-    setAppointments(prevAppointments => [...prevAppointments, appointmentToAdd]);
-    
-    toast.success(t("appointments.success.scheduled"));
-    setIsDialogOpen(false);
-    
-    // Reset form
-    setNewAppointment({
-      patientName: "",
-      date: formattedToday,
-      time: "",
-      type: "Consultation",
-      notes: "",
-    });
-  };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setNewAppointment(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSelectChange = (value: string, name: string) => {
-    setNewAppointment(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleCancel = (id: number) => {
-    setAppointments(prev => 
-      prev.map(app => app.id === id ? { ...app, status: "canceled" } : app)
-    );
-    toast.success(t("appointments.success.canceled"));
-  };
-  
-  const handleDelete = () => {
-    if (appointmentToDelete !== null) {
-      setAppointments(prev => prev.filter(app => app.id !== appointmentToDelete));
-      setAppointmentToDelete(null);
-      toast.success(t("appointments.success.deleted"));
-    }
-  };
-  
-  const handleRestore = (id: number) => {
-    setAppointments(prev => 
-      prev.map(app => app.id === id ? { ...app, status: "confirmed" } : app)
-    );
-    toast.success(t("appointments.success.restored"));
-  };
-
-  const handleQuickAction = (action: string) => {
-    toast.info(`${action} action initiated`);
-  };
-  
-  // Filter appointments based on the selected date
-  const filteredAppointments = appointments.filter(app => {
-    if (!date) return true;
-    
-    const appDate = new Date(app.date);
-    return (
-      appDate.getDate() === date.getDate() &&
-      appDate.getMonth() === date.getMonth() &&
-      appDate.getFullYear() === date.getFullYear()
-    );
-  });
-  
-  // Filter appointments based on the selected tab
-  const displayedAppointments = filteredAppointments.filter(app => {
-    if (selectedTab === "upcoming") {
-      return app.status !== "canceled";
-    } else if (selectedTab === "canceled") {
-      return app.status === "canceled";
-    }
-    return true;
-  });
-  
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "canceled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Create an object to group appointments by date for the calendar
-  const appointmentsByDate = useMemo(() => {
-    const grouped: Record<string, Array<{
-      id: number;
-      patientName: string;
-      time: string;
-      status: string;
-      type: string;
-    }>> = {};
-    
-    appointments.forEach(app => {
-      const appDate = app.date;
-      if (!grouped[appDate]) {
-        grouped[appDate] = [];
-      }
-      grouped[appDate].push({
-        id: app.id,
-        patientName: app.patientName,
-        time: app.time,
-        status: app.status,
-        type: app.type,
-      });
-    });
-    
-    // Sort appointments by time for each date
-    Object.keys(grouped).forEach(date => {
-      grouped[date].sort((a, b) => a.time.localeCompare(b.time));
-    });
-    
-    return grouped;
-  }, [appointments]);
+  const { t } = useLanguage();
+  const {
+    date,
+    setDate,
+    selectedTab,
+    setSelectedTab,
+    filteredAppointments,
+    displayedAppointments,
+    appointmentsByDate,
+    isDialogOpen,
+    setIsDialogOpen,
+    addAppointment,
+    cancelAppointment,
+    deleteAppointment,
+    restoreAppointment,
+  } = useAppointments();
 
   // Quick Actions data
   const quickActions = [
@@ -269,6 +67,10 @@ export default function Appointments() {
     },
   ];
 
+  const handleQuickAction = (action: string) => {
+    toast.info(`${action} action initiated`);
+  };
+
   // RTL aware classes for layout
   const gridColsClass = getDirectionAwareClassName(
     "grid-cols-1 lg:grid-cols-3", 
@@ -279,34 +81,6 @@ export default function Appointments() {
     "lg:col-span-2", 
     "lg:col-span-2"
   );
-
-  // Custom day renderer for the calendar to show appointment indicators and details
-  const renderDay = (day: Date) => {
-    const dateString = day.toISOString().split('T')[0];
-    const appointmentsForDay = appointmentsByDate[dateString];
-    
-    if (!appointmentsForDay) return undefined;
-    
-    return (
-      <div className="relative w-full h-full flex flex-col justify-center items-center">
-        {/* Display appointment indicators */}
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center mb-1">
-          {appointmentsForDay.some(app => app.status === "confirmed") && (
-            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-green-500"></div>
-          )}
-          {appointmentsForDay.some(app => app.status === "pending") && (
-            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-yellow-500"></div>
-          )}
-          {appointmentsForDay.some(app => app.status === "canceled") && (
-            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-red-500"></div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Calendar class based on screen size to make it larger
-  const calendarClass = "rounded-md border pointer-events-auto min-h-[350px] md:min-h-[450px]";
 
   return (
     <DashboardLayout>
@@ -320,92 +94,10 @@ export default function Appointments() {
               {t("appointments.new")}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>{t("appointments.schedule")}</DialogTitle>
-              <DialogDescription>
-                {t("appointments.enterDetails")}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleNewAppointment} className="space-y-4 pt-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Label htmlFor="patientName">{t("appointments.patientName")}</Label>
-                  <Input 
-                    id="patientName" 
-                    name="patientName"
-                    value={newAppointment.patientName}
-                    onChange={handleInputChange}
-                    placeholder={t("appointments.patientName")}
-                    required
-                    className={language === "ar" ? "text-right" : ""}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="date">{t("appointments.date")}</Label>
-                    <Input 
-                      id="date" 
-                      name="date"
-                      type="date"
-                      value={newAppointment.date}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="time">{t("appointments.time")}</Label>
-                    <Input 
-                      id="time" 
-                      name="time"
-                      type="time"
-                      value={newAppointment.time}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="type">{t("appointments.type")}</Label>
-                  <Select 
-                    value={newAppointment.type} 
-                    onValueChange={(value) => handleSelectChange(value, "type")}
-                  >
-                    <SelectTrigger id="type">
-                      <SelectValue placeholder={t("appointments.type")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Consultation">{t("appointments.type.consultation")}</SelectItem>
-                      <SelectItem value="Check-up">{t("appointments.type.checkup")}</SelectItem>
-                      <SelectItem value="Follow-up">{t("appointments.type.followup")}</SelectItem>
-                      <SelectItem value="Emergency">{t("appointments.type.emergency")}</SelectItem>
-                      <SelectItem value="Procedure">{t("appointments.type.procedure")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="notes">{t("appointments.notes")}</Label>
-                  <Input 
-                    id="notes" 
-                    name="notes"
-                    value={newAppointment.notes}
-                    onChange={handleInputChange}
-                    placeholder={t("appointments.notes")}
-                    className={language === "ar" ? "text-right" : ""}
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button type="submit">{t("appointments.schedule.button")}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
+          <AppointmentForm 
+            setIsDialogOpen={setIsDialogOpen} 
+            onAddAppointment={addAppointment} 
+          />
         </Dialog>
       </div>
       
@@ -422,254 +114,30 @@ export default function Appointments() {
                 <TabsTrigger value="canceled" className="flex-1">{t("tabs.canceled")}</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="upcoming" className="space-y-4">
-                {displayedAppointments.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">{t("appointments.noAppointments")}</div>
-                ) : (
-                  displayedAppointments.map((appointment) => (
-                    <div 
-                      key={appointment.id}
-                      className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                    >
-                      <div className="flex flex-col md:flex-row justify-between mb-2">
-                        <div className="font-medium">{appointment.patientName}</div>
-                        <div className="text-gray-500 text-sm">
-                          {formatDate(appointment.date)} • {appointment.time}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col md:flex-row justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
-                            {t(`appointments.status.${appointment.status}`)}
-                          </span>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {t(`appointments.type.${appointment.type.toLowerCase().replace(/-/g, "")}`)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">{t("appointments.reschedule")}</Button>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">{t("appointments.cancel")}</Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>{t("appointments.confirmCancel")}</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {t("appointments.confirmCancelMessage")}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>{t("appointments.keep")}</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleCancel(appointment.id)}>
-                                  {t("appointments.confirmCancelButton")}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="!text-red-600 border-red-200">
-                                {t("appointments.delete")}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>{t("appointments.confirmDelete")}</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {t("appointments.confirmDeleteMessage")}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>{t("appointments.cancelConfirm")}</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => {
-                                  setAppointmentToDelete(appointment.id);
-                                  handleDelete();
-                                }}>
-                                  {t("appointments.confirmDeleteButton")}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                      
-                      {appointment.notes && (
-                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-medium">{t("appointments.notes")}:</span> {appointment.notes}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
+              <TabsContent value="upcoming">
+                <AppointmentList 
+                  appointments={displayedAppointments}
+                  onCancel={cancelAppointment}
+                  onDelete={deleteAppointment}
+                />
               </TabsContent>
               
               <TabsContent value="all">
-                <div className="space-y-4">
-                  {filteredAppointments.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">No appointments for the selected date</div>
-                  ) : (
-                    filteredAppointments.map((appointment) => (
-                      <div 
-                        key={appointment.id}
-                        className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between mb-2">
-                          <div className="font-medium">{appointment.patientName}</div>
-                          <div className="text-gray-500 text-sm">
-                            {new Date(appointment.date).toLocaleDateString()} • {appointment.time}
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col md:flex-row justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
-                              {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                            </span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{appointment.type}</span>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Reschedule</Button>
-                            
-                            {appointment.status !== "canceled" ? (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm">Cancel</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to cancel this appointment? This action can be reversed later.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>No, keep it</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleCancel(appointment.id)}>
-                                      Yes, cancel appointment
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            ) : (
-                              <Button variant="secondary" size="sm" onClick={() => handleRestore(appointment.id)}>
-                                Restore
-                              </Button>
-                            )}
-                            
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="!text-red-600 border-red-200">
-                                  Delete
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this appointment? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => {
-                                    setAppointmentToDelete(appointment.id);
-                                    handleDelete();
-                                  }}>
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                        
-                        {appointment.notes && (
-                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span className="font-medium">Notes:</span> {appointment.notes}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
+                <AppointmentList 
+                  appointments={filteredAppointments}
+                  onCancel={cancelAppointment}
+                  onDelete={deleteAppointment}
+                  onRestore={restoreAppointment}
+                />
               </TabsContent>
               
               <TabsContent value="canceled">
-                <div className="space-y-4">
-                  {displayedAppointments.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">No canceled appointments for the selected date</div>
-                  ) : (
-                    displayedAppointments.map((appointment) => (
-                      <div 
-                        key={appointment.id}
-                        className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between mb-2">
-                          <div className="font-medium">{appointment.patientName}</div>
-                          <div className="text-gray-500 text-sm">
-                            {new Date(appointment.date).toLocaleDateString()} • {appointment.time}
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col md:flex-row justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
-                              {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                            </span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{appointment.type}</span>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="secondary" 
-                              size="sm"
-                              onClick={() => handleRestore(appointment.id)}
-                            >
-                              Restore
-                            </Button>
-                            
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="!text-red-600 border-red-200">
-                                  Delete
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Appointment</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this appointment? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => {
-                                    setAppointmentToDelete(appointment.id);
-                                    handleDelete();
-                                  }}>
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                        
-                        {appointment.notes && (
-                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span className="font-medium">Notes:</span> {appointment.notes}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
+                <AppointmentList 
+                  appointments={displayedAppointments}
+                  onCancel={cancelAppointment}
+                  onDelete={deleteAppointment}
+                  onRestore={restoreAppointment}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -681,55 +149,12 @@ export default function Appointments() {
               <CardTitle>{t("calendar.title")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className={calendarClass}
-                components={{
-                  Day: ({ date: day, ...props }) => {
-                    if (!day) return null;
-                    return (
-                      <div className="relative">
-                        <div {...props} />
-                        {renderDay(day)}
-                      </div>
-                    )
-                  }
-                }}
+              <AppointmentCalendar
+                date={date}
+                setDate={setDate}
+                appointmentsByDate={appointmentsByDate}
+                filteredAppointments={filteredAppointments}
               />
-              
-              {date && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-2">{t("calendar.selectedDate")}: {date.toLocaleDateString()}</h3>
-                  
-                  {/* Display appointments for selected date */}
-                  <div className="mt-2 space-y-2 max-h-[300px] overflow-auto">
-                    {filteredAppointments.length === 0 ? (
-                      <div className="text-sm text-gray-500">{t("calendar.noAppointments")}</div>
-                    ) : (
-                      filteredAppointments.map((appointment) => (
-                        <div 
-                          key={appointment.id}
-                          className={`p-2 rounded-md text-xs border-l-4 ${
-                            appointment.status === 'confirmed' ? 'border-l-green-500 bg-green-50' :
-                            appointment.status === 'pending' ? 'border-l-yellow-500 bg-yellow-50' :
-                            'border-l-red-500 bg-red-50'
-                          }`}
-                        >
-                          <div className="font-medium">{appointment.time} - {appointment.patientName}</div>
-                          <div className="flex justify-between mt-1">
-                            <span>{appointment.type}</span>
-                            <span className={`px-1.5 py-0.5 rounded-full text-xs ${getStatusColor(appointment.status)}`}>
-                              {t(`appointments.status.${appointment.status}`)}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
           
@@ -737,84 +162,23 @@ export default function Appointments() {
             <CardHeader>
               <CardTitle>{t("quickActions.title")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {quickActions.map((action, index) => (
-                <Button 
-                  key={index} 
-                  variant="outline" 
-                  className="w-full justify-start hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  onClick={action.action}
-                >
-                  {action.icon}
-                  <span className="ml-2">{action.title}</span>
-                </Button>
-              ))}
+            <CardContent>
+              <QuickActions actions={quickActions} />
             </CardContent>
           </Card>
         </div>
       </div>
       
-      {/* Custom weekly calendar view */}
+      {/* Weekly calendar view */}
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>{t("calendar.weeklyView")}</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            <div className="grid grid-cols-7 gap-1">
-              {/* Calendar headers */}
-              {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
-                <div key={index} className="p-2 text-center font-medium bg-gray-100 rounded-t-md">
-                  {t(`calendar.days.${day.toLowerCase()}`)}
-                </div>
-              ))}
-              
-              {/* Generate calendar cells for current week */}
-              {(() => {
-                const currentDate = date || new Date();
-                const startOfWeek = new Date(currentDate);
-                startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); // Start from Sunday
-                
-                const days = [];
-                for (let i = 0; i < 7; i++) {
-                  const dayDate = new Date(startOfWeek);
-                  dayDate.setDate(startOfWeek.getDate() + i);
-                  const dateString = dayDate.toISOString().split('T')[0];
-                  const appointmentsForDay = appointmentsByDate[dateString] || [];
-                  
-                  days.push(
-                    <div 
-                      key={i} 
-                      className={`p-2 border min-h-[150px] ${
-                        dayDate.toDateString() === new Date().toDateString() 
-                          ? 'bg-blue-50' 
-                          : ''
-                      }`}
-                    >
-                      <div className="text-right text-sm mb-1">
-                        {dayDate.getDate()}
-                      </div>
-                      <div className="space-y-1">
-                        {appointmentsForDay.map((app) => (
-                          <div 
-                            key={app.id}
-                            className={`p-1 text-xs rounded ${
-                              app.status === 'confirmed' ? 'bg-green-100' :
-                              app.status === 'pending' ? 'bg-yellow-100' :
-                              'bg-red-100'
-                            }`}
-                          >
-                            <div className="font-medium truncate">{app.time} - {app.patientName}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-                return days;
-              })()}
-            </div>
-          </div>
+          <WeeklyCalendarView 
+            date={date}
+            appointmentsByDate={appointmentsByDate}
+          />
         </CardContent>
       </Card>
     </DashboardLayout>
