@@ -207,17 +207,33 @@ export default function Appointments() {
 
   // Create an object to group appointments by date for the calendar
   const appointmentsByDate = useMemo(() => {
-    const grouped: Record<string, {count: number, hasConfirmed: boolean}> = {};
+    const grouped: Record<string, Array<{
+      id: number;
+      patientName: string;
+      time: string;
+      status: string;
+      type: string;
+    }>> = {};
+    
     appointments.forEach(app => {
       const appDate = app.date;
       if (!grouped[appDate]) {
-        grouped[appDate] = { count: 0, hasConfirmed: false };
+        grouped[appDate] = [];
       }
-      grouped[appDate].count += 1;
-      if (app.status === "confirmed") {
-        grouped[appDate].hasConfirmed = true;
-      }
+      grouped[appDate].push({
+        id: app.id,
+        patientName: app.patientName,
+        time: app.time,
+        status: app.status,
+        type: app.type,
+      });
     });
+    
+    // Sort appointments by time for each date
+    Object.keys(grouped).forEach(date => {
+      grouped[date].sort((a, b) => a.time.localeCompare(b.time));
+    });
+    
     return grouped;
   }, [appointments]);
 
@@ -264,7 +280,7 @@ export default function Appointments() {
     "lg:col-span-2"
   );
 
-  // Custom day renderer for the calendar to show appointment indicators
+  // Custom day renderer for the calendar to show appointment indicators and details
   const renderDay = (day: Date) => {
     const dateString = day.toISOString().split('T')[0];
     const appointmentsForDay = appointmentsByDate[dateString];
@@ -272,16 +288,25 @@ export default function Appointments() {
     if (!appointmentsForDay) return undefined;
     
     return (
-      <div className="relative w-full h-full flex justify-center items-center">
+      <div className="relative w-full h-full flex flex-col justify-center items-center">
+        {/* Display appointment indicators */}
         <div className="absolute bottom-0 left-0 right-0 flex justify-center mb-1">
-          <div className={`w-1.5 h-1.5 rounded-full mx-0.5 ${appointmentsForDay.hasConfirmed ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-          {appointmentsForDay.count > 1 && (
-            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-blue-500"></div>
+          {appointmentsForDay.some(app => app.status === "confirmed") && (
+            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-green-500"></div>
+          )}
+          {appointmentsForDay.some(app => app.status === "pending") && (
+            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-yellow-500"></div>
+          )}
+          {appointmentsForDay.some(app => app.status === "canceled") && (
+            <div className="w-1.5 h-1.5 rounded-full mx-0.5 bg-red-500"></div>
           )}
         </div>
       </div>
     );
   };
+
+  // Calendar class based on screen size to make it larger
+  const calendarClass = "rounded-md border pointer-events-auto min-h-[350px] md:min-h-[450px]";
 
   return (
     <DashboardLayout>
@@ -660,7 +685,7 @@ export default function Appointments() {
                 mode="single"
                 selected={date}
                 onSelect={setDate}
-                className="rounded-md border pointer-events-auto"
+                className={calendarClass}
                 components={{
                   Day: ({ date: day, ...props }) => {
                     if (!day) return null;
@@ -677,8 +702,31 @@ export default function Appointments() {
               {date && (
                 <div className="mt-4">
                   <h3 className="text-sm font-medium mb-2">{t("calendar.selectedDate")}: {date.toLocaleDateString()}</h3>
-                  <div className="text-xs text-gray-500">
-                    {filteredAppointments.length} {filteredAppointments.length === 1 ? t("calendar.appointment") : t("calendar.appointments")}
+                  
+                  {/* Display appointments for selected date */}
+                  <div className="mt-2 space-y-2 max-h-[300px] overflow-auto">
+                    {filteredAppointments.length === 0 ? (
+                      <div className="text-sm text-gray-500">{t("calendar.noAppointments")}</div>
+                    ) : (
+                      filteredAppointments.map((appointment) => (
+                        <div 
+                          key={appointment.id}
+                          className={`p-2 rounded-md text-xs border-l-4 ${
+                            appointment.status === 'confirmed' ? 'border-l-green-500 bg-green-50' :
+                            appointment.status === 'pending' ? 'border-l-yellow-500 bg-yellow-50' :
+                            'border-l-red-500 bg-red-50'
+                          }`}
+                        >
+                          <div className="font-medium">{appointment.time} - {appointment.patientName}</div>
+                          <div className="flex justify-between mt-1">
+                            <span>{appointment.type}</span>
+                            <span className={`px-1.5 py-0.5 rounded-full text-xs ${getStatusColor(appointment.status)}`}>
+                              {t(`appointments.status.${appointment.status}`)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -705,6 +753,70 @@ export default function Appointments() {
           </Card>
         </div>
       </div>
+      
+      {/* Custom weekly calendar view */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>{t("calendar.weeklyView")}</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            <div className="grid grid-cols-7 gap-1">
+              {/* Calendar headers */}
+              {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
+                <div key={index} className="p-2 text-center font-medium bg-gray-100 rounded-t-md">
+                  {t(`calendar.days.${day.toLowerCase()}`)}
+                </div>
+              ))}
+              
+              {/* Generate calendar cells for current week */}
+              {(() => {
+                const currentDate = date || new Date();
+                const startOfWeek = new Date(currentDate);
+                startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); // Start from Sunday
+                
+                const days = [];
+                for (let i = 0; i < 7; i++) {
+                  const dayDate = new Date(startOfWeek);
+                  dayDate.setDate(startOfWeek.getDate() + i);
+                  const dateString = dayDate.toISOString().split('T')[0];
+                  const appointmentsForDay = appointmentsByDate[dateString] || [];
+                  
+                  days.push(
+                    <div 
+                      key={i} 
+                      className={`p-2 border min-h-[150px] ${
+                        dayDate.toDateString() === new Date().toDateString() 
+                          ? 'bg-blue-50' 
+                          : ''
+                      }`}
+                    >
+                      <div className="text-right text-sm mb-1">
+                        {dayDate.getDate()}
+                      </div>
+                      <div className="space-y-1">
+                        {appointmentsForDay.map((app) => (
+                          <div 
+                            key={app.id}
+                            className={`p-1 text-xs rounded ${
+                              app.status === 'confirmed' ? 'bg-green-100' :
+                              app.status === 'pending' ? 'bg-yellow-100' :
+                              'bg-red-100'
+                            }`}
+                          >
+                            <div className="font-medium truncate">{app.time} - {app.patientName}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return days;
+              })()}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }
