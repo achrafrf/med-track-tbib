@@ -83,90 +83,90 @@ export default function Appointments() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-2xl font-bold">{t("appointments.title")}</h1>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="mt-4 md:mt-0">
-              <Plus className="h-4 w-4 mr-2" />
-              {t("appointments.new")}
-            </Button>
-          </DialogTrigger>
-          <AppointmentForm 
-            setIsDialogOpen={setIsDialogOpen} 
-            onAddAppointment={addAppointment} 
-          />
-        </Dialog>
-      </div>
-      
-      <div className={`grid ${gridColsClass} gap-6`}>
-        <Card className={colSpanClass}>
-          <CardHeader>
-            <CardTitle>{t("appointments.title")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="w-full mb-6">
-                <TabsTrigger value="upcoming" className="flex-1">{t("tabs.upcoming")}</TabsTrigger>
-                <TabsTrigger value="all" className="flex-1">{t("tabs.all")}</TabsTrigger>
-                <TabsTrigger value="canceled" className="flex-1">{t("tabs.canceled")}</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="upcoming">
-                <AppointmentList 
-                  appointments={displayedAppointments}
-                  onCancel={cancelAppointment}
-                  onDelete={deleteAppointment}
-                />
-              </TabsContent>
-              
-              <TabsContent value="all">
-                <AppointmentList 
-                  appointments={filteredAppointments}
-                  onCancel={cancelAppointment}
-                  onDelete={deleteAppointment}
-                  onRestore={restoreAppointment}
-                />
-              </TabsContent>
-              
-              <TabsContent value="canceled">
-                <AppointmentList 
-                  appointments={displayedAppointments}
-                  onCancel={cancelAppointment}
-                  onDelete={deleteAppointment}
-                  onRestore={restoreAppointment}
-                />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-        
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("calendar.title")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AppointmentCalendar
-                date={date}
-                setDate={setDate}
-                appointmentsByDate={appointmentsByDate}
-                filteredAppointments={filteredAppointments}
-              />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("quickActions.title")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuickActions actions={quickActions} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </DashboardLayout>
+  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+    <h1 className="text-2xl font-bold">{t("appointments.title")}</h1>
+
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button className="mt-4 md:mt-0">
+          <Plus className="h-4 w-4 mr-2" />
+          {t("appointments.new")}
+        </Button>
+      </DialogTrigger>
+      <AppointmentForm 
+        setIsDialogOpen={setIsDialogOpen} 
+        onAddAppointment={addAppointment} 
+      />
+    </Dialog>
+  </div>
+
+  <div className={`grid ${gridColsClass} gap-6`}>
+    <Card className={colSpanClass}>
+      <CardHeader>
+        <CardTitle>{t("appointments.title")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+          <TabsList className="w-full mb-6">
+            <TabsTrigger value="upcoming" className="flex-1">{t("tabs.upcoming")}</TabsTrigger>
+            <TabsTrigger value="all" className="flex-1">{t("tabs.all")}</TabsTrigger>
+            <TabsTrigger value="canceled" className="flex-1">{t("tabs.canceled")}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upcoming">
+            <AppointmentList 
+              appointments={displayedAppointments}
+              onCancel={cancelAppointment}
+              onDelete={deleteAppointment}
+            />
+          </TabsContent>
+
+          <TabsContent value="all">
+            <AppointmentList 
+              appointments={filteredAppointments}
+              onCancel={cancelAppointment}
+              onDelete={deleteAppointment}
+              onRestore={restoreAppointment}
+            />
+          </TabsContent>
+
+          <TabsContent value="canceled">
+            <AppointmentList 
+              appointments={displayedAppointments}
+              onCancel={cancelAppointment}
+              onDelete={deleteAppointment}
+              onRestore={restoreAppointment}
+            />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("quickActions.title")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <QuickActions actions={quickActions} />
+      </CardContent>
+    </Card>
+
+    {/* ✅ هذا هو القسم الجديد الكبير للتقويم */}
+    <Card className="lg:col-span-3">
+      <CardHeader>
+        <CardTitle>{t("calendar.title")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <AppointmentCalendar
+          date={date}
+          setDate={setDate}
+          appointmentsByDate={appointmentsByDate}
+          filteredAppointments={filteredAppointments}
+        />
+      </CardContent>
+    </Card>
+  </div>
+</DashboardLayout>
+
   );
 }

@@ -9,7 +9,7 @@ export function Hero() {
         <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
           <div className="w-full md:w-1/2 space-y-6">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
-              Modern Healthcare Management For Your Clinic
+              A comprehensive medical program to manage your clinic with ease
             </h1>
             <p className="text-lg md:text-xl text-gray-600">
               Streamline your medical practice with Tbib360's comprehensive platform for appointment scheduling, electronic prescriptions, and patient records management.
@@ -40,43 +40,7 @@ export function Hero() {
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-lg bg-tbib-50/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                        <span className="text-green-600">✓</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Today's Appointments</h4>
-                        <p className="text-sm text-gray-500">8 appointments scheduled</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600">+</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">New Patient Registration</h4>
-                        <p className="text-sm text-gray-500">3 new patients today</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                        <span className="text-amber-600">!</span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Prescription Renewals</h4>
-                        <p className="text-sm text-gray-500">5 pending requests</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+               
               </div>
             </div>
           </div>
